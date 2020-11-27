@@ -3,57 +3,87 @@
 #include <string.h>
 #include <pthread.h>
 
-void mergeSort(int l, int r, int arr[]);
-void merge(int l, int m, int r, int arr[]);
+//cantidad de hilos
+#define BOUND 4 
+
+//funciones de ordenamiento
+//---------------------------------
+void mergeSort(int l, int r);
+void merge(int l, int m, int r);
+void* thread_mergeSort(void* arg);
+//---------------------------------
+
+//funciones para manipular la cadena de entrada
+//---------------------------------
 void printArr(int arr[], int size);
 int* makeArr(char* str, int count);
 int countNumbers(char* str);
+//---------------------------------
 
-int* list;
+//---------------------------------
+int* arr;
+int arr_size;
+int part = 0; 
+//---------------------------------
 
+//---------------------------------
 int main(int argc, char** argv){
     
-	int size = countNumbers(argv[1]);
-	if(size == 0){
-		fprintf(stderr,"Entrada no permitida\n");
+	int arr_size = countNumbers(argv[1]);
+	if(arr_size == 0){
+		fprintf(stderr,"Entrada incorrecta\nUso: %s x1,x2,...,xn\n", argv[0]);
 		return 1;
 	}
 
-	list = makeArr(argv[1], size);
+	arr = makeArr(argv[1], arr_size);
 	printf("Entrada:   ");
-	printArr(list,size);
+	printArr(arr,arr_size);
 
-	mergeSort(0,size-1, list);
+	//---------------------------------
+	pthread_t threads[BOUND]; 
+
+	//creando hilos 
+	for (int i = 0; i < BOUND; i++) 
+		pthread_create(&threads[i], NULL, thread_mergeSort, (void*)NULL); 
+
+	//joining 
+	for (int i = 0; i < 4; i++) 
+		pthread_join(threads[i], NULL); 
+
+	//mezclando las últimas 4 partes
+	merge(0, (arr_size / 2 - 1) / 2, arr_size / 2 - 1); 
+	merge(arr_size / 2, arr_size/2 + (arr_size-1-arr_size/2)/2, arr_size - 1); 
+	merge(0, (arr_size - 1)/2, arr_size - 1);
+	//---------------------------------
+
 	printf("Resultado: ");
-	printArr(list,size);
+	printArr(arr,arr_size);
 
-	free(list);
+	free(arr);
     return 0;
 }
+//---------------------------------
 
 
-// Merges two subarrays of arr[].
-// First subarray is arr[l..m]
-// Second subarray is arr[m+1..r]
-void merge(int l, int m, int r, int arr[])
+//---------------------------------
+void merge(int l, int m, int r)
 {
 	int i, j, k;
 	int n1 = m - l + 1;
 	int n2 = r - m;
 
-	/* create temp arrays */
 	int L[n1], R[n2];
 
-	/* Copy data to temp arrays L[] and R[] */
+
 	for (i = 0; i < n1; i++)
 		L[i] = arr[l + i];
 	for (j = 0; j < n2; j++)
 		R[j] = arr[m + 1 + j];
 
-	/* Merge the temp arrays back into arr[l..r]*/
-	i = 0; // Initial index of first subarray
-	j = 0; // Initial index of second subarray
-	k = l; // Initial index of merged subarray
+	
+	i = 0; 
+	j = 0; 
+	k = l; 
 	while (i < n1 && j < n2) {
 		if (L[i] <= R[j]) {
 			arr[k] = L[i];
@@ -66,16 +96,14 @@ void merge(int l, int m, int r, int arr[])
 		k++;
 	}
 
-	/* Copy the remaining elements of L[], if there
-	are any */
+	
 	while (i < n1) {
 		arr[k] = L[i];
 		i++;
 		k++;
 	}
 
-	/* Copy the remaining elements of R[], if there
-	are any */
+	
 	while (j < n2) {
 		arr[k] = R[j];
 		j++;
@@ -83,24 +111,39 @@ void merge(int l, int m, int r, int arr[])
 	}
 }
 
-/* l is for left index and r is right index of the
-sub-array of arr to be sorted */
-void mergeSort(int l, int r, int arr[])
+
+void mergeSort(int l, int r)
 {
 	if (l < r) {
-		// Same as (l+r)/2, but avoids overflow for
-		// large l and h
+		
 		int m = l + (r - l) / 2;
 
-		// Sort first and second halves
-		mergeSort(l, m, arr);
-		mergeSort(m + 1, r, arr);
+		mergeSort(l, m);
+		mergeSort(m + 1, r);
 
-		merge(l, m, r, arr);
+		merge(l, m, r);
 	}
 }
 
+void* thread_mergeSort(void* arg) { 
 
+	int thread_part = part++; 
+
+	int start = thread_part * (arr_size / BOUND); 
+	int end = (thread_part + 1) * (arr_size / BOUND) - 1; 
+
+	int mid = start + (end - start) / 2; 
+	if (start < end) { 
+		mergeSort(start, mid); 
+		mergeSort(mid + 1, end); 
+		merge(start, mid, end); 
+	} 
+}
+
+//---------------------------------
+
+
+//---------------------------------
 int countNumbers(char* str){
 	if(str == NULL){
 		return 0;
@@ -147,8 +190,6 @@ int* makeArr(char* str, int count){
 	return arr;
 }
 
-
-
 void printArr(int arr[], int size){
 	printf("[");
 
@@ -163,4 +204,4 @@ void printArr(int arr[], int size){
 
 	printf("]\n");
 }
-
+//---------------------------------
