@@ -150,10 +150,15 @@ int* makeArr(char* str, int count){
 
 
 void printArr(int arr[], int size){
-	printf("[ ");
+	printf("[");
 
 	for(int* p=arr; p < arr+size; p++){
-		printf("%d ",*p);
+		printf("%d",*p);
+
+		if(p != arr+(size-1)){
+			printf(",");
+		}
+
 	}
 
 	printf("]\n");
