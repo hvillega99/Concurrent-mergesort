@@ -3,8 +3,8 @@
 #include <string.h>
 #include <pthread.h>
 
-void* mergeSort(int start, int end, int arr[]);
-void* merge(int start, int mid, int end, int arr[]);
+void mergeSort(int l, int r, int arr[]);
+void merge(int l, int m, int r, int arr[]);
 void printArr(int arr[], int size);
 int* makeArr(char* str, int count);
 int countNumbers(char* str);
@@ -32,45 +32,28 @@ int main(int argc, char** argv){
 }
 
 
-void* mergeSort(int start,int end, int arr[]){
-
-    if(start<end){
-        int mid = start + (end - start) / 2;
-
-		/*pthread_t tid1, tid2, tid3;
-		pthread_create(&tid1, NULL, mergeSort(start,mid), NULL); //left
-		pthread_join(tid1,NULL);
-		pthread_create(&tid2, NULL, mergeSort(mid+1,end), NULL); //right
-		pthread_join(tid2,NULL);
-		pthread_create(&tid3, NULL, merge(start, mid, end), NULL);*/
-
-        mergeSort(start,mid, arr); //izquierda
-        mergeSort(mid+1,end, arr); //derecha
-        merge(start, mid, end, arr); //mezclar
-
-    }
-
-}
-
-
-void* merge(int start, int mid, int end, int arr[]){
+// Merges two subarrays of arr[].
+// First subarray is arr[l..m]
+// Second subarray is arr[m+1..r]
+void merge(int l, int m, int r, int arr[])
+{
 	int i, j, k;
-	int n1 = mid - start + 1;
-	int n2 = end - start;
+	int n1 = m - l + 1;
+	int n2 = r - m;
 
 	/* create temp arrays */
 	int L[n1], R[n2];
 
 	/* Copy data to temp arrays L[] and R[] */
 	for (i = 0; i < n1; i++)
-		L[i] = arr[start + i];
+		L[i] = arr[l + i];
 	for (j = 0; j < n2; j++)
-		R[j] = arr[mid + 1 + j];
+		R[j] = arr[m + 1 + j];
 
 	/* Merge the temp arrays back into arr[l..r]*/
 	i = 0; // Initial index of first subarray
 	j = 0; // Initial index of second subarray
-	k = start; // Initial index of merged subarray
+	k = l; // Initial index of merged subarray
 	while (i < n1 && j < n2) {
 		if (L[i] <= R[j]) {
 			arr[k] = L[i];
@@ -99,6 +82,24 @@ void* merge(int start, int mid, int end, int arr[]){
 		k++;
 	}
 }
+
+/* l is for left index and r is right index of the
+sub-array of arr to be sorted */
+void mergeSort(int l, int r, int arr[])
+{
+	if (l < r) {
+		// Same as (l+r)/2, but avoids overflow for
+		// large l and h
+		int m = l + (r - l) / 2;
+
+		// Sort first and second halves
+		mergeSort(l, m, arr);
+		mergeSort(m + 1, r, arr);
+
+		merge(l, m, r, arr);
+	}
+}
+
 
 int countNumbers(char* str){
 	if(str == NULL){
